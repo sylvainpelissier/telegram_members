@@ -1,13 +1,9 @@
 from telethon import TelegramClient
 from telethon.tl.functions.messages import GetDialogsRequest
-from telethon.tl.types import InputPeerEmpty, InputPeerChannel, InputPeerUser
-from telethon.errors.rpcerrorlist import (PeerFloodError, UserNotMutualContactError ,
-                                          UserPrivacyRestrictedError, UserChannelsTooMuchError,
-                                          UserBotError, InputUserDeactivatedError)
-from telethon.tl.functions.channels import InviteToChannelRequest
-import time, os, sys, json
+from telethon.tl.types import InputPeerEmpty
+import os, json, sys
 
-COLORS = {
+colors = {
     "re": "\u001b[31;1m",
     "gr": "\u001b[32m",
     "ye": "\u001b[33;1m",
@@ -17,13 +13,11 @@ gr = "\u001b[32m"
 ye = "\u001b[33;1m"
 
 def colorText(text):
-    for color in COLORS:
-        text = text.replace("[[" + color + "]]", COLORS[color])
+    for color in colors:
+        text = text.replace("[[" + color + "]]", colors[color])
     return text
 
 clear = lambda:os.system('clear')
-telet = lambda :os.system('pip3 install -U telethon')
-telet()
 clear()
 
 if os.path.isfile('getmem_log.txt'):
@@ -43,6 +37,11 @@ client = TelegramClient('anon', api_id, api_hash)
 async def main():
     chats = []
     channel = []
+
+    if len(sys.argv) != 2:
+        print(f"Usage: {sys.argv[0]} [channel_name]")
+        sys.exit()
+
     result = await client(GetDialogsRequest(
         offset_date=None,
         offset_id=0,
@@ -61,18 +60,18 @@ async def main():
     a = 0
     print('')
     for i in channel:
-        if i.title == "CAS Diablerets - Last minute":
-            print("Channel found")
+        if i.title == sys.argv[1]:
+            print(ye + "[+] Channel found")
             break
         a += 1
     opt = a
-    print('')
-    print(ye+'[+] Fetching Members...')
-    time.sleep(1)
+    print(ye+'[+] Fetching participants ...')
     target_group = channel[opt]
     all_participants = []
     mem_details = []
     all_participants = await client.get_participants(target_group)
+
+    print(gr+ f'[+] Found {len(all_participants)} participants')
     for user in all_participants:
         try:
             if user.username:
@@ -98,19 +97,19 @@ async def main():
             mem_details.append(new_mem)
         except ValueError:
             continue
-        
-    with open("members.txt", "r") as f:
-        old_members = json.load(f)
-
+    
+    try:
+        with open("members.txt", "r") as f:
+            old_members = json.load(f)
+    except FileNotFoundError:
+        old_members = []
+    
     for mem in mem_details:
         if mem not in old_members:
             print(gr + "[+] New member detected: " + mem["firstname"] + " " + mem["lastname"])
 
     with open('members.txt', 'w') as w:
         json.dump(mem_details, w)
-    time.sleep(1)
-    print(ye+'Please wait.....')
-    time.sleep(3)
     print(gr+'[+] Members loaded successfully.')
     await client.disconnect()
 
